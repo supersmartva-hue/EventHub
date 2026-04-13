@@ -1,0 +1,29 @@
+# Environment & secrets
+.env
+*.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+env/
+.venv/
+
+# Database
+*.db
+*.sqlite3
+
+# Flask
+instance/
+.webassets-cache
+
+# Uploads
+app/static/images/uploads/
+
+# IDE
+.vscode/
+.idea/
+*.swp

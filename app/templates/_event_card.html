@@ -1,0 +1,45 @@
+{# Reusable event card — variable: event #}
+<a href="{{ url_for('events.detail', event_id=event.id) }}"
+   class="card event-card h-100">
+
+  <!-- Thumbnail -->
+  <div class="ec-thumb">
+    <img class="ec-img" src="{{ event.get_image_url() }}" alt="{{ event.title }}"
+         loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=800'">
+    <div class="ec-overlay"></div>
+    <span class="ec-tag">{{ event.category }}</span>
+    {% if event.is_virtual %}
+    <span class="ec-virtual-tag"><i class="bi bi-camera-video me-1"></i>Virtual</span>
+    {% endif %}
+    <span class="ec-date">
+      <i class="bi bi-calendar3 me-1"></i>{{ event.date.strftime('%b %d, %Y') }}
+    </span>
+  </div>
+
+  <!-- Body -->
+  <div class="ec-body">
+    <div class="ec-title">{{ event.title }}</div>
+
+    <div class="ec-meta">
+      <i class="bi bi-geo-alt-fill"></i>
+      <span>{{ event.location[:38] }}{% if event.location|length > 38 %}…{% endif %}</span>
+    </div>
+    <div class="ec-meta">
+      <i class="bi bi-clock"></i>
+      <span>{{ event.date.strftime('%I:%M %p') }}</span>
+    </div>
+
+    <div class="ec-footer">
+      <span class="ec-price {% if event.price == 0 %}free{% endif %}">
+        {{ event.price_display }}
+      </span>
+      <span class="ec-spots">{{ event.spots_left }} left</span>
+    </div>
+
+    <!-- Capacity bar -->
+    <div class="ec-bar">
+      <div class="ec-bar-fill" style="width:{{ event.fill_percentage }}%"></div>
+    </div>
+  </div>
+
+</a>

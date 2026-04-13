@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Admin — Users{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="px-3 mb-2">
+      <span class="section-label">Admin Panel</span>
+    </div>
+    <nav class="d-flex flex-column">
+      <a href="{{ url_for('admin.dashboard') }}" class="nav-link">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a>
+      <a href="{{ url_for('admin.events') }}" class="nav-link">
+        <i class="bi bi-calendar-event"></i> Events
+      </a>
+      <a href="{{ url_for('admin.users') }}" class="nav-link active">
+        <i class="bi bi-people"></i> Users
+      </a>
+      <hr style="border-color:var(--border);margin:.5rem 1rem">
+      <a href="{{ url_for('events.create') }}" class="nav-link">
+        <i class="bi bi-plus-circle"></i> New Event
+      </a>
+      <a href="{{ url_for('main.home') }}" class="nav-link">
+        <i class="bi bi-arrow-left"></i> Back to Site
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main content -->
+  <div class="admin-content">
+    <h4 class="fw-800 mb-4">
+      <span class="text-grad">Users</span> Management
+      <span class="pill pill-primary ms-2">{{ users.total }}</span>
+    </h4>
+
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Email</th>
+              <th>Role</th>
+              <th>Joined</th>
+              <th>Events</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users.items %}
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <img src="{{ u.get_avatar_url() }}"
+                       style="width:34px;height:34px;border-radius:50%;object-fit:cover;
+                              border:2px solid var(--border)">
+                  <span class="fw-600" style="font-size:.88rem">{{ u.username }}</span>
+                </div>
+              </td>
+              <td style="font-size:.82rem;color:var(--text-muted)">{{ u.email }}</td>
+              <td>
+                {% if u.is_admin %}
+                <span class="pill pill-warning">
+                  <i class="bi bi-shield-fill-check me-1"></i>Admin
+                </span>
+                {% else %}
+                <span class="pill pill-muted">User</span>
+                {% endif %}
+              </td>
+              <td style="font-size:.82rem;color:var(--text-muted)">
+                {{ u.created_at.strftime('%b %d, %Y') }}
+              </td>
+              <td style="font-size:.85rem">{{ u.organized_events.count() }}</td>
+              <td>
+                <form method="POST"
+                      action="{{ url_for('admin.toggle_admin', user_id=u.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit"
+                          class="btn btn-sm {% if u.is_admin %}btn-outline-warning{% else %}btn-outline-primary{% endif %}"
+                          {% if u.id == current_user.id %}disabled title="Cannot change your own role"{% endif %}>
+                    <i class="bi bi-{{ 'shield-x' if u.is_admin else 'shield-plus' }} me-1"></i>
+                    {{ 'Remove Admin' if u.is_admin else 'Make Admin' }}
+                  </button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      {% if users.pages > 1 %}
+      <div class="p-3" style="border-top:1px solid var(--border)">
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            {% for p in users.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+              {% if p %}
+              <li class="page-item {% if p == users.page %}active{% endif %}">
+                <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+              </li>
+              {% else %}
+              <li class="page-item disabled"><span class="page-link">…</span></li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+    </div>
+  </div><!-- /admin-content -->
+
+</div>
+{% endblock %}

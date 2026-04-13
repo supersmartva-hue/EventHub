@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-box">
+    <div class="auth-brand">
+      <i class="bi bi-lightning-charge-fill me-1"></i>EventHub
+    </div>
+    <p class="text-center text-muted mb-4" style="font-size:.9rem">
+      Welcome back! Sign in to your account.
+    </p>
+
+    <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="mb-3">
+        {{ form.email.label(class='form-label') }}
+        {{ form.email(class='form-control', placeholder='you@example.com') }}
+        {% for err in form.email.errors %}
+          <div class="text-danger" style="font-size:.8rem">{{ err }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="mb-3">
+        {{ form.password.label(class='form-label') }}
+        <div class="position-relative">
+          {{ form.password(class='form-control', placeholder='Your password',
+                          id='passwordField') }}
+          <button type="button" class="btn btn-link position-absolute top-50 end-0
+                  translate-middle-y pe-3 p-0 text-muted" id="togglePwd"
+                  style="font-size:1.1rem" onclick="togglePassword()">
+            <i class="bi bi-eye" id="eyeIcon"></i>
+          </button>
+        </div>
+        {% for err in form.password.errors %}
+          <div class="text-danger" style="font-size:.8rem">{{ err }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="form-check">
+          {{ form.remember(class='form-check-input') }}
+          {{ form.remember.label(class='form-check-label', style='font-size:.875rem') }}
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 py-2">
+        <i class="bi bi-box-arrow-in-right me-2"></i>Login
+      </button>
+    </form>
+
+    <div class="divider">or</div>
+
+    <p class="text-center text-muted" style="font-size:.875rem">
+      Don't have an account?
+      <a href="{{ url_for('auth.signup') }}" class="fw-600">Create one</a>
+    </p>
+  </div>
+</div>
+
+<script>
+function togglePassword() {
+  const f = document.getElementById('passwordField');
+  const i = document.getElementById('eyeIcon');
+  if (f.type === 'password') {
+    f.type = 'text';
+    i.className = 'bi bi-eye-slash';
+  } else {
+    f.type = 'password';
+    i.className = 'bi bi-eye';
+  }
+}
+</script>
+{% endblock %}

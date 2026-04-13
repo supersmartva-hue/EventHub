@@ -1,0 +1,385 @@
+{% extends 'base.html' %}
+{% block title %}{{ event.title }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+{% endblock %}
+
+{% block content %}
+
+<!-- ══════════════════ HERO IMAGE ═════════════════════════════ -->
+<div class="event-hero-img">
+  <img src="{{ event.get_image_url() }}" alt="{{ event.title }}"
+       onerror="this.src='https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=1200'">
+  <div class="overlay"></div>
+  <div class="content">
+    <div class="d-flex flex-wrap gap-2 mb-2">
+      <span class="pill pill-primary">
+        <i class="bi bi-{{ event.get_icon() }}"></i> {{ event.category }}
+      </span>
+      {% if event.is_virtual %}
+      <span class="pill pill-info">
+        <i class="bi bi-camera-video"></i> Virtual Event
+      </span>
+      {% endif %}
+      {% if event.is_past %}
+      <span class="pill pill-muted">Event Ended</span>
+      {% endif %}
+    </div>
+    <h1>{{ event.title }}</h1>
+    <p class="mb-0" style="opacity:.8;font-size:.95rem">
+      <i class="bi bi-person-circle me-1"></i>
+      Organised by <strong>{{ event.organizer.username }}</strong>
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════ MAIN CONTENT ══════════════════════════ -->
+<div class="container py-4">
+  <div class="row g-4">
+
+    <!-- Left: tabs + content -->
+    <div class="col-lg-8">
+
+      <!-- Tab nav -->
+      <ul class="nav nav-tabs mb-4">
+        <li class="nav-item">
+          <button class="nav-link active" data-bs-toggle="tab"
+                  data-bs-target="#tabOverview">
+            <i class="bi bi-info-circle me-1"></i>Overview
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" data-bs-toggle="tab"
+                  data-bs-target="#tabLocation">
+            <i class="bi bi-geo-alt me-1"></i>Location
+          </button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" data-bs-toggle="tab"
+                  data-bs-target="#tabDiscussion">
+            <i class="bi bi-chat-dots me-1"></i>Discussion
+            <span class="pill pill-primary ms-1" style="padding:.1rem .45rem;font-size:.68rem">
+              {{ comments|length }}
+            </span>
+          </button>
+        </li>
+      </ul>
+
+      <div class="tab-content">
+
+        <!-- Overview -->
+        <div class="tab-pane fade show active" id="tabOverview">
+          <div class="card p-4 mb-4">
+            <h5 class="fw-700 mb-3">About This Event</h5>
+            <div style="white-space:pre-wrap;line-height:1.8;
+                        color:var(--text-secondary)">{{ event.description }}</div>
+
+            {% if event.is_virtual and event.meet_link %}
+            <div class="mt-4 p-3 rounded-xl"
+                 style="background:rgba(59,130,246,.08);border:1.5px solid rgba(59,130,246,.2)">
+              <h6 class="fw-700 mb-2" style="color:#3b82f6">
+                <i class="bi bi-camera-video me-2"></i>Join Online
+              </h6>
+              <a href="{{ event.meet_link }}" target="_blank" rel="noopener"
+                 class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-box-arrow-up-right me-1"></i>Join Meeting
+              </a>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Similar events -->
+          {% if similar %}
+          <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-700 mb-0">You Might Also Like</h5>
+              <a href="{{ url_for('events.list_events', category=event.category) }}"
+                 class="btn btn-outline-primary btn-sm">
+                More {{ event.category }}
+              </a>
+            </div>
+            <div class="row g-3">
+              {% for event in similar %}
+              <div class="col-md-4">{% include '_event_card.html' %}</div>
+              {% endfor %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Location -->
+        <div class="tab-pane fade" id="tabLocation">
+          <div class="card p-4">
+            <h5 class="fw-700 mb-3">
+              <i class="bi bi-geo-alt-fill me-2 text-primary"></i>{{ event.location }}
+            </h5>
+            {% if event.latitude and event.longitude %}
+            <div id="event-map"></div>
+            <p class="text-muted mt-2 mb-0" style="font-size:.82rem">
+              <i class="bi bi-info-circle me-1"></i>
+              Coordinates: {{ "%.4f"|format(event.latitude) }},
+              {{ "%.4f"|format(event.longitude) }}
+            </p>
+            {% else %}
+            <div class="text-center py-5" style="color:var(--text-muted)">
+              <i class="bi bi-map" style="font-size:3rem;display:block;margin-bottom:.75rem"></i>
+              <p class="mb-0">Map coordinates not provided for this event.</p>
+              <p style="font-size:.85rem">Address: {{ event.location }}</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Discussion -->
+        <div class="tab-pane fade" id="tabDiscussion">
+
+          <!-- Post comment -->
+          {% if current_user.is_authenticated %}
+          <div class="card p-4 mb-4">
+            <div class="d-flex gap-3">
+              <img src="{{ current_user.get_avatar_url() }}"
+                   style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">
+              <form method="POST"
+                    action="{{ url_for('events.add_comment', event_id=event.id) }}"
+                    class="flex-grow-1" novalidate>
+                {{ comment_form.hidden_tag() }}
+                {{ comment_form.body(class='form-control mb-2', rows=3,
+                                    style='resize:none') }}
+                {% for e in comment_form.body.errors %}
+                <div class="invalid-feedback d-block">{{ e }}</div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary btn-sm">
+                  <i class="bi bi-send me-1"></i>Post Comment
+                </button>
+              </form>
+            </div>
+          </div>
+          {% else %}
+          <div class="card p-3 text-center mb-4" style="font-size:.9rem">
+            <a href="{{ url_for('auth.login') }}">Login</a> to join the discussion.
+          </div>
+          {% endif %}
+
+          <!-- Comments list -->
+          {% if comments %}
+          <div class="card p-4">
+            {% for c in comments %}
+            <div class="comment-item">
+              <img src="{{ c.author.get_avatar_url() }}"
+                   class="comment-avatar" alt="{{ c.author.username }}">
+              <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-start">
+                  <span class="comment-name">{{ c.author.username }}</span>
+                  <span class="comment-time">
+                    {{ c.created_at.strftime('%b %d, %Y · %I:%M %p') }}
+                  </span>
+                </div>
+                <p class="comment-body">{{ c.body }}</p>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="text-center py-5" style="color:var(--text-muted)">
+            <i class="bi bi-chat-square"
+               style="font-size:3rem;display:block;margin-bottom:.75rem"></i>
+            <p class="mb-0">No comments yet. Start the conversation!</p>
+          </div>
+          {% endif %}
+
+        </div><!-- /tabDiscussion -->
+      </div><!-- /tab-content -->
+    </div><!-- /col-lg-8 -->
+
+    <!-- Right: info sidebar -->
+    <div class="col-lg-4">
+      <div class="info-sidebar">
+
+        <!-- Countdown -->
+        {% if event.is_upcoming %}
+        <p class="text-muted mb-2 text-center"
+           style="font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;font-weight:600">
+          <i class="bi bi-hourglass-split me-1"></i>Event starts in
+        </p>
+        <div class="countdown mb-3" id="countdown"
+             data-date="{{ event.date.isoformat() }}">
+          <div class="cd-box">
+            <span class="cd-num" id="cd-days">--</span>
+            <span class="cd-lbl">Days</span>
+          </div>
+          <div class="cd-box">
+            <span class="cd-num" id="cd-hours">--</span>
+            <span class="cd-lbl">Hrs</span>
+          </div>
+          <div class="cd-box">
+            <span class="cd-num" id="cd-mins">--</span>
+            <span class="cd-lbl">Min</span>
+          </div>
+          <div class="cd-box">
+            <span class="cd-num" id="cd-secs">--</span>
+            <span class="cd-lbl">Sec</span>
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Info rows -->
+        <div class="info-row">
+          <div class="info-icon-box"><i class="bi bi-calendar3"></i></div>
+          <div>
+            <div class="info-lbl">Date</div>
+            <div class="info-val">{{ event.date.strftime('%A, %B %d, %Y') }}</div>
+            <div style="font-size:.82rem;color:var(--primary);font-weight:600">
+              {{ event.date.strftime('%I:%M %p') }}
+            </div>
+          </div>
+        </div>
+
+        {% if event.end_date %}
+        <div class="info-row">
+          <div class="info-icon-box"><i class="bi bi-calendar-check"></i></div>
+          <div>
+            <div class="info-lbl">Ends</div>
+            <div class="info-val">{{ event.end_date.strftime('%B %d, %Y · %I:%M %p') }}</div>
+          </div>
+        </div>
+        {% endif %}
+
+        <div class="info-row">
+          <div class="info-icon-box"><i class="bi bi-geo-alt-fill"></i></div>
+          <div>
+            <div class="info-lbl">Location</div>
+            <div class="info-val">{{ event.location }}</div>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-icon-box"><i class="bi bi-people-fill"></i></div>
+          <div>
+            <div class="info-lbl">Capacity</div>
+            <div class="info-val">{{ event.tickets_sold }} / {{ event.capacity }} registered</div>
+            <div class="cap-bar">
+              <div class="cap-bar-fill" style="width:{{ event.fill_percentage }}%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-row">
+          <div class="info-icon-box"><i class="bi bi-tag-fill"></i></div>
+          <div>
+            <div class="info-lbl">Price</div>
+            <div class="fw-800" style="font-size:1.3rem">
+              <span class="text-grad">{{ event.price_display }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Register CTA -->
+        <div class="mt-3">
+          {% if current_user.is_authenticated %}
+            {% if user_ticket %}
+              <div class="text-center">
+                <div class="pill pill-success w-100 justify-content-center mb-3 py-2">
+                  <i class="bi bi-check-circle-fill"></i> You're Registered!
+                </div>
+                <a href="{{ url_for('tickets.ticket_detail', ticket_id=user_ticket.id) }}"
+                   class="btn btn-outline-primary w-100 mb-2">
+                  <i class="bi bi-qr-code me-1"></i>View My Ticket
+                </a>
+                <form method="POST"
+                      action="{{ url_for('tickets.cancel', ticket_id=user_ticket.id) }}">
+                  {{ comment_form.hidden_tag() }}
+                  <button type="submit" class="btn btn-outline-danger btn-sm w-100"
+                          data-confirm="Cancel your registration for this event?">
+                    <i class="bi bi-x-circle me-1"></i>Cancel Registration
+                  </button>
+                </form>
+              </div>
+            {% elif event.is_past %}
+            <button class="btn btn-outline-secondary w-100" disabled>
+              <i class="bi bi-clock-history me-1"></i>Event Has Ended
+            </button>
+            {% elif event.is_full %}
+            <button class="btn btn-outline-danger w-100" disabled>
+              <i class="bi bi-x-circle me-1"></i>Fully Booked
+            </button>
+            {% else %}
+            <form method="POST"
+                  action="{{ url_for('tickets.register', event_id=event.id) }}">
+              {{ comment_form.hidden_tag() }}
+              <button type="submit" class="btn btn-primary w-100 btn-lg">
+                <i class="bi bi-ticket-perforated me-2"></i>
+                Register Now{% if event.price > 0 %} · {{ event.price_display }}{% endif %}
+              </button>
+            </form>
+            <p class="text-muted text-center mt-2 mb-0" style="font-size:.78rem">
+              <i class="bi bi-people me-1"></i>{{ event.spots_left }} spots remaining
+            </p>
+            {% endif %}
+          {% else %}
+          <a href="{{ url_for('auth.login', next=request.url) }}"
+             class="btn btn-primary w-100 btn-lg">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Login to Register
+          </a>
+          {% endif %}
+        </div>
+
+        <!-- Edit/Delete for organiser -->
+        {% if current_user.is_authenticated and
+              (current_user.id == event.organizer_id or current_user.is_admin) %}
+        <hr style="border-color:var(--border);margin:1rem 0">
+        <div class="d-flex gap-2">
+          <a href="{{ url_for('events.edit', event_id=event.id) }}"
+             class="btn btn-outline-primary btn-sm flex-grow-1">
+            <i class="bi bi-pencil me-1"></i>Edit
+          </a>
+          <form method="POST"
+                action="{{ url_for('events.delete', event_id=event.id) }}"
+                class="flex-grow-1">
+            {{ comment_form.hidden_tag() }}
+            <button type="submit"
+                    class="btn btn-outline-danger btn-sm w-100"
+                    data-confirm="Permanently delete '{{ event.title }}'? This cannot be undone.">
+              <i class="bi bi-trash me-1"></i>Delete
+            </button>
+          </form>
+        </div>
+        {% endif %}
+
+      </div><!-- /info-sidebar -->
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/countdown.js') }}"></script>
+{% if event.latitude and event.longitude %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var mapInitialized = false;
+  document.querySelector('[data-bs-target="#tabLocation"]')
+    .addEventListener('shown.bs.tab', function () {
+      if (mapInitialized) return;
+      mapInitialized = true;
+
+      var map = L.map('event-map').setView(
+        [{{ event.latitude }}, {{ event.longitude }}], 14
+      );
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+      }).addTo(map);
+
+      var marker = L.marker([{{ event.latitude }}, {{ event.longitude }}]).addTo(map);
+      marker.bindPopup(
+        '<strong>{{ event.title|replace("'", "\\'") }}</strong><br>' +
+        '<small>{{ event.location|replace("'", "\\'") }}</small>'
+      ).openPopup();
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

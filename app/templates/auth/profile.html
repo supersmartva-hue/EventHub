@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+
+{% block content %}
+<div class="page-hdr">
+  <div class="container">
+    <div class="d-flex align-items-center gap-4">
+      <img src="{{ current_user.get_avatar_url() }}" alt="Avatar"
+           style="width:80px;height:80px;border-radius:50%;object-fit:cover;
+                  border:3px solid rgba(255,255,255,.5)">
+      <div>
+        <h1 class="mb-0">{{ current_user.username }}</h1>
+        <p class="mb-0" style="opacity:.8">{{ current_user.email }}</p>
+        <span style="font-size:.8rem;background:rgba(255,255,255,.15);
+                     padding:.2rem .7rem;border-radius:50px">
+          {% if current_user.is_admin %}
+            <i class="bi bi-shield-fill-check me-1"></i>Admin
+          {% else %}
+            <i class="bi bi-person-circle me-1"></i>Member since
+            {{ current_user.created_at.strftime('%B %Y') }}
+          {% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container pb-5">
+  <div class="row g-4">
+
+    <!-- Edit Profile Form -->
+    <div class="col-lg-5">
+      <div class="form-card">
+        <h5 class="fw-700 mb-4">
+          <i class="bi bi-pencil-square me-2 text-primary"></i>Edit Profile
+        </h5>
+        <form method="POST" enctype="multipart/form-data" novalidate>
+          {{ form.hidden_tag() }}
+
+          <div class="mb-3">
+            {{ form.username.label(class='form-label') }}
+            {{ form.username(class='form-control') }}
+            {% for e in form.username.errors %}
+              <div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+
+          <div class="mb-3">
+            {{ form.bio.label(class='form-label') }}
+            {{ form.bio(class='form-control', rows=3,
+                        placeholder='Tell the community about yourself…') }}
+            {% for e in form.bio.errors %}
+              <div class="text-danger small">{{ e }}</div>{% endfor %}
+          </div>
+
+          <div class="mb-3">
+            {{ form.interests.label(class='form-label') }}
+            {{ form.interests(class='form-select') }}
+          </div>
+
+          <div class="mb-4">
+            {{ form.avatar.label(class='form-label') }}
+            {{ form.avatar(class='form-control') }}
+            <div class="mt-2">
+              <img src="{{ current_user.get_avatar_url() }}" id="avatarPreview"
+                   style="width:56px;height:56px;border-radius:50%;object-fit:cover;
+                          border:2px solid var(--primary)">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-check2 me-2"></i>Save Changes
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- My Tickets summary -->
+    <div class="col-lg-7">
+      <div class="card p-4">
+        <h5 class="fw-700 mb-4">
+          <i class="bi bi-ticket-perforated me-2 text-primary"></i>
+          My Registrations
+        </h5>
+        {% if tickets %}
+          <div class="d-flex flex-column gap-3">
+            {% for ticket in tickets %}
+            <div class="d-flex gap-3 align-items-center">
+              <img src="{{ ticket.event.get_image_url() }}"
+                   style="width:60px;height:60px;border-radius:12px;object-fit:cover">
+              <div class="flex-grow-1">
+                <div class="fw-600">{{ ticket.event.title }}</div>
+                <div class="text-muted" style="font-size:.82rem">
+                  <i class="bi bi-calendar3 me-1"></i>
+                  {{ ticket.event.date.strftime('%b %d, %Y') }}
+                  {% if ticket.event.date > now %}
+                    <span class="pill pill-success ms-2">Upcoming</span>
+                  {% else %}
+                    <span class="pill pill-muted ms-2">Past</span>
+                  {% endif %}
+                </div>
+              </div>
+              <a href="{{ url_for('tickets.ticket_detail', ticket_id=ticket.id) }}"
+                 class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-qr-code"></i>
+              </a>
+            </div>
+            {% endfor %}
+          </div>
+          <a href="{{ url_for('tickets.my_tickets') }}"
+             class="btn btn-outline-primary btn-sm mt-3">
+            View All Tickets
+          </a>
+        {% else %}
+          <div class="text-center py-4">
+            <i class="bi bi-ticket-perforated"
+               style="font-size:2.5rem;color:var(--text-muted)"></i>
+            <p class="text-muted mt-2 mb-3">No registrations yet.</p>
+            <a href="{{ url_for('events.list_events') }}"
+               class="btn btn-primary btn-sm">Browse Events</a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelector('input[type="file"]').addEventListener('change', function() {
+  const file = this.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('avatarPreview').src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+</script>
+{% endblock %}

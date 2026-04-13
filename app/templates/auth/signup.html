@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-box" style="max-width:500px">
+    <div class="auth-brand">
+      <i class="bi bi-lightning-charge-fill me-1"></i>EventHub
+    </div>
+    <p class="text-center text-muted mb-4" style="font-size:.9rem">
+      Join EventHub and discover amazing events.
+    </p>
+
+    <form method="POST" action="{{ url_for('auth.signup') }}" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="mb-3">
+        {{ form.username.label(class='form-label') }}
+        {{ form.username(class='form-control', placeholder='Choose a username') }}
+        {% for err in form.username.errors %}
+          <div class="text-danger" style="font-size:.8rem">{{ err }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="mb-3">
+        {{ form.email.label(class='form-label') }}
+        {{ form.email(class='form-control', placeholder='you@example.com') }}
+        {% for err in form.email.errors %}
+          <div class="text-danger" style="font-size:.8rem">{{ err }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="mb-3">
+        {{ form.password.label(class='form-label') }}
+        {{ form.password(class='form-control', placeholder='Min. 8 characters') }}
+        {% for err in form.password.errors %}
+          <div class="text-danger" style="font-size:.8rem">{{ err }}</div>
+        {% endfor %}
+        <!-- Password strength bar -->
+        <div class="mt-1" style="height:4px;border-radius:2px;background:var(--border)">
+          <div id="strengthBar"
+               style="height:100%;border-radius:2px;width:0;transition:.3s"></div>
+        </div>
+        <div id="strengthText"
+             style="font-size:.72rem;color:var(--text-muted);margin-top:.2rem"></div>
+      </div>
+
+      <div class="mb-4">
+        {{ form.confirm_password.label(class='form-label') }}
+        {{ form.confirm_password(class='form-control', placeholder='Repeat your password') }}
+        {% for err in form.confirm_password.errors %}
+          <div class="text-danger" style="font-size:.8rem">{{ err }}</div>
+        {% endfor %}
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 py-2">
+        <i class="bi bi-person-plus me-2"></i>Create Account
+      </button>
+    </form>
+
+    <div class="divider">or</div>
+
+    <p class="text-center text-muted" style="font-size:.875rem">
+      Already have an account?
+      <a href="{{ url_for('auth.login') }}" class="fw-600">Login</a>
+    </p>
+  </div>
+</div>
+
+<script>
+document.querySelector('input[name="password"]')
+  .addEventListener('input', function() {
+    const val  = this.value;
+    const bar  = document.getElementById('strengthBar');
+    const text = document.getElementById('strengthText');
+    let score  = 0;
+    if (val.length >= 8)            score++;
+    if (/[A-Z]/.test(val))         score++;
+    if (/[0-9]/.test(val))         score++;
+    if (/[^A-Za-z0-9]/.test(val)) score++;
+    const colors = ['#FF6584','#FDCB6E','#43D9AD','#6C63FF'];
+    const labels = ['Weak','Fair','Good','Strong'];
+    bar.style.width      = (score * 25) + '%';
+    bar.style.background = colors[score - 1] || 'transparent';
+    text.textContent     = score > 0 ? labels[score - 1] : '';
+  });
+</script>
+{% endblock %}

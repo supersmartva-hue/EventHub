@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}My Tickets{% endblock %}
+
+{% block content %}
+<div class="page-hdr">
+  <div class="container">
+    <h1><i class="bi bi-ticket-perforated me-2"></i>My Tickets</h1>
+    <p>Your event registrations</p>
+  </div>
+</div>
+
+<div class="container pb-5">
+
+  <!-- Upcoming events -->
+  <h5 class="fw-700 mb-3">
+    <i class="bi bi-clock me-2 text-primary"></i>Upcoming
+    <span class="pill pill-primary ms-1">{{ upcoming|length }}</span>
+  </h5>
+
+  {% if upcoming %}
+  <div class="row g-4 mb-5">
+    {% for ticket in upcoming %}
+    <div class="col-md-6 col-lg-4">
+      <div class="ticket-card">
+        <div class="ticket-top">
+          <h4>{{ ticket.event.title }}</h4>
+          <div style="font-size:.82rem;opacity:.85">
+            <i class="bi bi-calendar3 me-1"></i>
+            {{ ticket.event.date.strftime('%B %d, %Y — %I:%M %p') }}
+          </div>
+          <div style="font-size:.82rem;opacity:.85;margin-top:.25rem">
+            <i class="bi bi-geo-alt me-1"></i>{{ ticket.event.location }}
+          </div>
+        </div>
+        <div class="ticket-body">
+          <div class="d-flex justify-content-between mb-2">
+            <div>
+              <div style="font-size:.72rem;color:var(--text-muted)">Ticket Code</div>
+              <div style="font-size:.78rem;font-weight:600;font-family:monospace">
+                {{ ticket.ticket_code[:8] }}…
+              </div>
+            </div>
+            <div>
+              <div style="font-size:.72rem;color:var(--text-muted)">Category</div>
+              <span class="pill pill-primary">{{ ticket.event.category }}</span>
+            </div>
+          </div>
+          <hr class="ticket-dashed">
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('tickets.ticket_detail', ticket_id=ticket.id) }}"
+               class="btn btn-primary btn-sm flex-grow-1">
+              <i class="bi bi-qr-code me-1"></i>View QR
+            </a>
+            <form method="POST"
+                  action="{{ url_for('tickets.cancel', ticket_id=ticket.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-outline-danger btn-sm"
+                      data-confirm="Cancel this registration?">
+                <i class="bi bi-x"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-4 mb-5">
+    <div style="width:72px;height:72px;background:var(--primary-light);border-radius:50%;
+                display:flex;align-items:center;justify-content:center;margin:0 auto 1rem">
+      <i class="bi bi-calendar-plus" style="font-size:1.8rem;color:var(--primary)"></i>
+    </div>
+    <p class="text-muted mb-3">No upcoming events registered.</p>
+    <a href="{{ url_for('events.list_events') }}" class="btn btn-primary btn-sm">
+      Find Events
+    </a>
+  </div>
+  {% endif %}
+
+  <!-- Past events -->
+  {% if past %}
+  <h5 class="fw-700 mb-3 text-muted">
+    <i class="bi bi-clock-history me-2"></i>Past Events
+  </h5>
+  <div class="row g-3">
+    {% for ticket in past %}
+    <div class="col-md-6">
+      <div class="card p-3" style="opacity:.75">
+        <div class="d-flex gap-3 align-items-center">
+          <img src="{{ ticket.event.get_image_url() }}"
+               style="width:56px;height:56px;border-radius:10px;object-fit:cover">
+          <div class="flex-grow-1">
+            <div class="fw-600" style="font-size:.9rem">{{ ticket.event.title }}</div>
+            <div class="text-muted" style="font-size:.78rem">
+              {{ ticket.event.date.strftime('%b %d, %Y') }}
+            </div>
+          </div>
+          <span class="pill pill-muted">Attended</span>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

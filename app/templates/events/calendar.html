@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}Event Calendar{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="page-hdr">
+  <div class="container">
+    <h1><i class="bi bi-calendar3 me-2"></i>Event Calendar</h1>
+    <p>All events at a glance</p>
+  </div>
+</div>
+
+<div class="container pb-5">
+  <div class="card p-4">
+    <div id="fullCalendar"></div>
+  </div>
+
+  <!-- Tooltip popup -->
+  <div id="calTooltip" style="
+    display:none;position:fixed;z-index:9999;background:var(--card);
+    border:1px solid var(--border);border-radius:var(--radius);
+    padding:.75rem 1rem;box-shadow:var(--shadow-lg);max-width:220px;
+    font-size:.85rem;pointer-events:none">
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const cal = new FullCalendar.Calendar(document.getElementById('fullCalendar'), {
+    initialView: 'dayGridMonth',
+    headerToolbar: {
+      left:   'prev,next today',
+      center: 'title',
+      right:  'dayGridMonth,timeGridWeek,listWeek'
+    },
+    events: '/api/events/calendar',
+    eventDidMount: function(info) {
+      /* Show tooltip on hover */
+      info.el.addEventListener('mouseenter', function(e) {
+        const tip  = document.getElementById('calTooltip');
+        const props = info.event.extendedProps;
+        tip.innerHTML = `
+          <strong>${info.event.title}</strong><br>
+          <small><i class="bi bi-geo-alt me-1"></i>${props.location}</small><br>
+          <small><i class="bi bi-tag me-1"></i>${props.category}</small><br>
+          <small><i class="bi bi-ticket me-1"></i>${props.price}</small>
+        `;
+        tip.style.display = 'block';
+        tip.style.left = (e.clientX + 12) + 'px';
+        tip.style.top  = (e.clientY + 12) + 'px';
+      });
+      info.el.addEventListener('mouseleave', function() {
+        document.getElementById('calTooltip').style.display = 'none';
+      });
+    },
+    eventClick: function(info) {
+      info.jsEvent.preventDefault();
+      window.location.href = info.event.url;
+    },
+    /* Apply CSS vars so calendar respects dark mode */
+    dayCellDidMount: function(info) {
+      info.el.style.background = 'var(--card)';
+      info.el.style.color = 'var(--text)';
+    }
+  });
+  cal.render();
+});
+</script>
+<style>
+/* Make FullCalendar respect our theme */
+.fc { color: var(--text); }
+.fc .fc-toolbar-title { color: var(--text); font-weight: 800; }
+.fc .fc-button-primary {
+  background: var(--primary); border-color: var(--primary);
+}
+.fc .fc-button-primary:not(:disabled).fc-button-active,
+.fc .fc-button-primary:not(:disabled):active {
+  background: var(--primary-dark); border-color: var(--primary-dark);
+}
+.fc-theme-standard td, .fc-theme-standard th,
+.fc-theme-standard .fc-scrollgrid {
+  border-color: var(--border) !important;
+}
+.fc .fc-daygrid-day { background: var(--card); }
+.fc .fc-col-header-cell-cushion { color: var(--text); font-weight: 600; }
+.fc .fc-daygrid-day-number { color: var(--text); }
+.fc .fc-day-today { background: rgba(108,99,255,0.06) !important; }
+</style>
+{% endblock %}

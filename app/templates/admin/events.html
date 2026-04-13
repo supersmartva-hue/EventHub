@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block title %}Admin — Events{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="px-3 mb-2">
+      <span class="section-label">Admin Panel</span>
+    </div>
+    <nav class="d-flex flex-column">
+      <a href="{{ url_for('admin.dashboard') }}" class="nav-link">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a>
+      <a href="{{ url_for('admin.events') }}" class="nav-link active">
+        <i class="bi bi-calendar-event"></i> Events
+      </a>
+      <a href="{{ url_for('admin.users') }}" class="nav-link">
+        <i class="bi bi-people"></i> Users
+      </a>
+      <hr style="border-color:var(--border);margin:.5rem 1rem">
+      <a href="{{ url_for('events.create') }}" class="nav-link">
+        <i class="bi bi-plus-circle"></i> New Event
+      </a>
+      <a href="{{ url_for('main.home') }}" class="nav-link">
+        <i class="bi bi-arrow-left"></i> Back to Site
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main content -->
+  <div class="admin-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 class="fw-800 mb-0">
+        <span class="text-grad">Events</span> Management
+      </h4>
+      <a href="{{ url_for('events.create') }}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-circle me-1"></i>New Event
+      </a>
+    </div>
+
+    <div class="card">
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Event</th>
+              <th>Category</th>
+              <th>Date</th>
+              <th>Tickets</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for e in events.items %}
+            <tr>
+              <td style="font-size:.8rem;color:var(--text-muted)">{{ e.id }}</td>
+              <td>
+                <div class="fw-600" style="font-size:.88rem">
+                  {{ e.title[:40] }}{% if e.title|length > 40 %}…{% endif %}
+                </div>
+                <div style="font-size:.75rem;color:var(--text-muted)">
+                  by {{ e.organizer.username }}
+                </div>
+              </td>
+              <td><span class="pill pill-primary">{{ e.category }}</span></td>
+              <td style="font-size:.82rem">{{ e.date.strftime('%b %d, %Y') }}</td>
+              <td style="font-size:.85rem">
+                {{ e.tickets_sold }}/{{ e.capacity }}
+                <div class="cap-bar mt-1" style="width:80px">
+                  <div class="cap-bar-fill" style="width:{{ e.fill_percentage }}%"></div>
+                </div>
+              </td>
+              <td>
+                {% if e.is_published %}
+                <span class="pill pill-success">
+                  <i class="bi bi-circle-fill" style="font-size:.45rem;vertical-align:middle"></i>
+                  Live
+                </span>
+                {% else %}
+                <span class="pill pill-muted">
+                  <i class="bi bi-circle" style="font-size:.45rem;vertical-align:middle"></i>
+                  Hidden
+                </span>
+                {% endif %}
+              </td>
+              <td>
+                <div class="d-flex gap-1 flex-wrap">
+                  <a href="{{ url_for('events.detail', event_id=e.id) }}"
+                     class="btn btn-outline-primary btn-sm"
+                     title="View"><i class="bi bi-eye"></i></a>
+                  <a href="{{ url_for('events.edit', event_id=e.id) }}"
+                     class="btn btn-outline-secondary btn-sm"
+                     title="Edit"><i class="bi bi-pencil"></i></a>
+                  <form method="POST"
+                        action="{{ url_for('admin.toggle_event', event_id=e.id) }}"
+                        class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit"
+                            class="btn btn-outline-warning btn-sm"
+                            title="{{ 'Unpublish' if e.is_published else 'Publish' }}">
+                      <i class="bi bi-{% if e.is_published %}eye-slash{% else %}eye{% endif %}"></i>
+                    </button>
+                  </form>
+                  <form method="POST"
+                        action="{{ url_for('admin.delete_event', event_id=e.id) }}"
+                        class="d-inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit"
+                            class="btn btn-outline-danger btn-sm"
+                            data-confirm="Permanently delete this event?">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% if events.pages > 1 %}
+      <div class="p-3" style="border-top:1px solid var(--border)">
+        <nav>
+          <ul class="pagination pagination-sm mb-0">
+            {% for p in events.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+              {% if p %}
+              <li class="page-item {% if p == events.page %}active{% endif %}">
+                <a class="page-link" href="?page={{ p }}">{{ p }}</a>
+              </li>
+              {% else %}
+              <li class="page-item disabled"><span class="page-link">…</span></li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        </nav>
+      </div>
+      {% endif %}
+    </div>
+  </div><!-- /admin-content -->
+
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+# ─── Core Flask ───────────────────────────────────────────────
+Flask==3.0.3                  # Web framework
+Flask-SQLAlchemy>=3.1.1       # Database ORM
+Flask-Login==0.6.3            # User session management
+Flask-WTF==1.2.1              # Form handling + CSRF protection
+Flask-Mail==0.10.0            # Send emails
+Flask-SocketIO==5.3.6         # Real-time notifications
+Flask-Migrate>=4.1.0          # Database migrations
+
+# ─── Security ─────────────────────────────────────────────────
+bcrypt>=4.2.1                 # Password hashing
+python-dotenv==1.0.1          # Load .env file variables
+
+# ─── Database ─────────────────────────────────────────────────
+SQLAlchemy>=2.0.49            # SQL toolkit (2.0.49+ required for Python 3.14)
+
+# ─── QR Code ──────────────────────────────────────────────────
+qrcode[pil]==7.4.2            # Generate QR codes
+Pillow>=11.0.0                # Image processing
+
+# ─── Utilities ────────────────────────────────────────────────
+WTForms==3.1.2                # Form validation
+email-validator==2.1.1        # Validate email addresses
+Werkzeug==3.0.3               # WSGI utilities

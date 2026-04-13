@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar">
+    <div class="px-3 mb-2">
+      <span class="section-label">Admin Panel</span>
+    </div>
+    <nav class="d-flex flex-column">
+      <a href="{{ url_for('admin.dashboard') }}" class="nav-link active">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a>
+      <a href="{{ url_for('admin.events') }}" class="nav-link">
+        <i class="bi bi-calendar-event"></i> Events
+      </a>
+      <a href="{{ url_for('admin.users') }}" class="nav-link">
+        <i class="bi bi-people"></i> Users
+      </a>
+      <hr style="border-color:var(--border);margin:.5rem 1rem">
+      <a href="{{ url_for('events.create') }}" class="nav-link">
+        <i class="bi bi-plus-circle"></i> New Event
+      </a>
+      <a href="{{ url_for('main.home') }}" class="nav-link">
+        <i class="bi bi-arrow-left"></i> Back to Site
+      </a>
+    </nav>
+  </aside>
+
+  <!-- Main content -->
+  <div class="admin-content">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 class="fw-800 mb-0">
+        <span class="text-grad">Dashboard</span> Overview
+      </h4>
+      <span class="text-muted" style="font-size:.82rem">
+        <i class="bi bi-clock me-1"></i>{{ now.strftime('%B %d, %Y · %I:%M %p') }}
+      </span>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-xl-3">
+        <div class="kpi">
+          <div class="kpi-icon p"><i class="bi bi-calendar-event-fill"></i></div>
+          <div>
+            <div class="kpi-val">{{ total_events }}</div>
+            <div class="kpi-lbl">Total Events</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="kpi">
+          <div class="kpi-icon r"><i class="bi bi-people-fill"></i></div>
+          <div>
+            <div class="kpi-val">{{ total_users }}</div>
+            <div class="kpi-lbl">Total Users</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="kpi">
+          <div class="kpi-icon g"><i class="bi bi-ticket-perforated-fill"></i></div>
+          <div>
+            <div class="kpi-val">{{ total_tickets }}</div>
+            <div class="kpi-lbl">Tickets Sold</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-6 col-xl-3">
+        <div class="kpi">
+          <div class="kpi-icon o"><i class="bi bi-currency-dollar"></i></div>
+          <div>
+            <div class="kpi-val">${{ "%.0f"|format(revenue) }}</div>
+            <div class="kpi-lbl">Revenue</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row g-4 mb-4">
+      <div class="col-lg-8">
+        <div class="card p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-700 mb-0">Registrations — Last 7 Days</h6>
+            <span class="pill pill-primary">
+              <i class="bi bi-graph-up"></i>
+              Total: {{ reg_data | sum(attribute='count') }}
+            </span>
+          </div>
+          <canvas id="regChart" height="110"></canvas>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="card p-4 h-100">
+          <h6 class="fw-700 mb-3">Events by Category</h6>
+          {% if category_data %}
+          <canvas id="catChart"></canvas>
+          {% else %}
+          <div class="text-center text-muted py-4">No data yet.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent activity -->
+    <div class="row g-4">
+      <div class="col-lg-6">
+        <div class="card p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-700 mb-0">Recent Events</h6>
+            <a href="{{ url_for('admin.events') }}"
+               class="btn btn-outline-primary btn-sm">View All</a>
+          </div>
+          <table class="table table-sm mb-0">
+            <thead>
+              <tr><th>Event</th><th>Date</th><th>Fill</th></tr>
+            </thead>
+            <tbody>
+              {% for e in recent_events %}
+              <tr>
+                <td>
+                  <a href="{{ url_for('events.detail', event_id=e.id) }}"
+                     class="fw-600 text-decoration-none" style="font-size:.875rem">
+                    {{ e.title[:30] }}{% if e.title|length > 30 %}…{% endif %}
+                  </a>
+                </td>
+                <td style="font-size:.8rem;color:var(--text-muted);white-space:nowrap">
+                  {{ e.date.strftime('%b %d, %Y') }}
+                </td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="cap-bar flex-grow-1" style="height:6px">
+                      <div class="cap-bar-fill" style="width:{{ e.fill_percentage }}%"></div>
+                    </div>
+                    <small class="text-muted">{{ e.fill_percentage }}%</small>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="card p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-700 mb-0">Recent Users</h6>
+            <a href="{{ url_for('admin.users') }}"
+               class="btn btn-outline-primary btn-sm">View All</a>
+          </div>
+          <div class="d-flex flex-column gap-3">
+            {% for u in recent_users %}
+            <div class="d-flex align-items-center gap-3">
+              <img src="{{ u.get_avatar_url() }}"
+                   style="width:36px;height:36px;border-radius:50%;object-fit:cover;flex-shrink:0">
+              <div class="flex-grow-1" style="min-width:0">
+                <div class="fw-600" style="font-size:.875rem;
+                     white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                  {{ u.username }}
+                </div>
+                <div class="text-muted" style="font-size:.75rem">
+                  {{ u.created_at.strftime('%b %d, %Y') }}
+                </div>
+              </div>
+              {% if u.is_admin %}
+              <span class="pill pill-warning">Admin</span>
+              {% endif %}
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /admin-content -->
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  var textColor   = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#94a3b8';
+  var borderColor = getComputedStyle(document.documentElement).getPropertyValue('--border').trim() || '#e2e8f0';
+
+  /* Registrations line chart */
+  var regData = {{ reg_data | tojson }};
+  new Chart(document.getElementById('regChart'), {
+    type: 'line',
+    data: {
+      labels:   regData.map(d => d.day),
+      datasets: [{
+        label: 'Registrations',
+        data:  regData.map(d => d.count),
+        borderColor:     '#6C63FF',
+        backgroundColor: 'rgba(108,99,255,0.1)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#6C63FF',
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        fill: true,
+        tension: 0.4
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false },
+                 tooltip: { mode: 'index', intersect: false } },
+      scales: {
+        x: { grid: { color: borderColor + '40' },
+             ticks: { color: textColor, font: { size: 11 } } },
+        y: { grid: { color: borderColor + '40' },
+             ticks: { color: textColor, stepSize: 1, font: { size: 11 } },
+             beginAtZero: true }
+      }
+    }
+  });
+
+  /* Category doughnut chart */
+  var catData = {{ category_data | tojson }};
+  if (catData.length) {
+    var palette = ['#6C63FF','#FF6584','#10b981','#f59e0b','#3b82f6',
+                   '#a855f7','#06b6d4','#ef4444','#84cc16','#f97316'];
+    new Chart(document.getElementById('catChart'), {
+      type: 'doughnut',
+      data: {
+        labels:   catData.map(c => c.label),
+        datasets: [{
+          data:            catData.map(c => c.count),
+          backgroundColor: palette,
+          borderWidth: 0,
+          hoverOffset: 8
+        }]
+      },
+      options: {
+        responsive: true,
+        cutout: '68%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { color: textColor, boxWidth: 10, padding: 12, font: { size: 11 } }
+          }
+        }
+      }
+    });
+  }
+})();
+</script>
+{% endblock %}
