@@ -16,8 +16,10 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY') or os.urandom(24)
 
     # Database URI — tells SQLAlchemy where the database is
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///eventhub.db'
+    # Render provides DATABASE_URL starting with 'postgres://' but SQLAlchemy
+    # requires 'postgresql://', so we fix that here.
+    _db_url = os.environ.get('DATABASE_URL') or 'sqlite:///eventhub.db'
+    SQLALCHEMY_DATABASE_URI = _db_url.replace('postgres://', 'postgresql://', 1)
 
     # Disable modification tracking (saves memory, not needed)
     SQLALCHEMY_TRACK_MODIFICATIONS = False

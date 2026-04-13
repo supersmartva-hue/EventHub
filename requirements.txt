@@ -22,3 +22,10 @@ Pillow>=11.0.0                # Image processing
 WTForms==3.1.2                # Form validation
 email-validator==2.1.1        # Validate email addresses
 Werkzeug==3.0.3               # WSGI utilities
+
+# ─── Production Server ─────────────────────────────────────────
+gunicorn==21.2.0              # WSGI server for production
+eventlet==0.36.1              # Async worker required by Flask-SocketIO
+
+# ─── PostgreSQL ────────────────────────────────────────────────
+psycopg2-binary==2.9.9        # PostgreSQL adapter
