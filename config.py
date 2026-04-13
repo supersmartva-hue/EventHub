@@ -18,7 +18,8 @@ class Config:
     # Database URI — tells SQLAlchemy where the database is
     # Render provides DATABASE_URL starting with 'postgres://' but SQLAlchemy
     # requires 'postgresql://', so we fix that here.
-    _db_url = os.environ.get('DATABASE_URL') or 'sqlite:///eventhub.db'
+    # On Vercel, /tmp is the only writable directory, so use it for SQLite.
+    _db_url = os.environ.get('DATABASE_URL') or 'sqlite:////tmp/eventhub.db'
     SQLALCHEMY_DATABASE_URI = _db_url.replace('postgres://', 'postgresql://', 1)
 
     # Disable modification tracking (saves memory, not needed)
@@ -34,8 +35,11 @@ class Config:
 
     # ─── File Upload Settings ──────────────────────────────────
     # Where uploaded event images are saved
-    UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__),
-                                 'app', 'static', 'images', 'uploads')
+    # On Vercel, use /tmp (only writable dir). Locally, use static/images/uploads.
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or (
+        '/tmp/uploads' if os.environ.get('VERCEL') else
+        os.path.join(os.path.dirname(__file__), 'app', 'static', 'images', 'uploads')
+    )
     # Maximum upload size: 5 MB
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024
     # Allowed image types
